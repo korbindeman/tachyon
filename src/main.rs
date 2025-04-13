@@ -2,26 +2,31 @@ mod routes;
 mod services;
 mod utils;
 
+use actix_extensible_rate_limit::{
+    RateLimiter,
+    backend::{SimpleInputFunctionBuilder, memory::InMemoryBackend},
+};
 use actix_multipart::form::MultipartFormConfig;
 use actix_web::{App, HttpServer, middleware::Logger, web};
+use dotenv::dotenv;
 use routes::{
     download::{download, download_info},
     upload::upload,
 };
 use sqlx::{Executor, Sqlite, SqlitePool, migrate::MigrateDatabase};
+use std::time::Duration;
 use tracing::info;
 use tracing_subscriber::fmt;
-use utils::GIGABYTE;
+use utils::{GIGABYTE, get_database_url};
 
 const PAYLOAD_LIMIT: usize = GIGABYTE * 5;
 
-const DATABASE_URL: &str = "sqlite://sqlite.db";
-
 async fn init_database() -> Result<SqlitePool, sqlx::Error> {
-    // Initialize the database connection
-    if !Sqlite::database_exists(DATABASE_URL).await.unwrap_or(false) {
-        println!("Creating database {}", DATABASE_URL);
-        match Sqlite::create_database(DATABASE_URL).await {
+    // initialize the database connection
+    let database_url = &get_database_url();
+    if !Sqlite::database_exists(database_url).await.unwrap_or(false) {
+        println!("Creating database {}", database_url);
+        match Sqlite::create_database(database_url).await {
             Ok(_) => println!("Create db success"),
             Err(error) => panic!("error: {}", error),
         }
@@ -29,7 +34,7 @@ async fn init_database() -> Result<SqlitePool, sqlx::Error> {
         println!("Database already exists");
     }
 
-    SqlitePool::connect(DATABASE_URL).await
+    SqlitePool::connect(database_url).await
 }
 
 struct AppState {
@@ -38,6 +43,8 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     fmt::init();
 
     info!("Starting HTTP server on 127.0.0.1:8080");
@@ -49,11 +56,21 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to initialize DB");
 
+    let backend = InMemoryBackend::builder().build();
+
     HttpServer::new(move || {
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 5)
+            .real_ip_key()
+            .build();
+        let rate_limiter = RateLimiter::builder(backend.clone(), input)
+            .add_headers()
+            .build();
+
         App::new()
             .app_data(MultipartFormConfig::default().total_limit(PAYLOAD_LIMIT))
             .app_data(web::Data::new(AppState { db: pool.clone() }))
             .wrap(Logger::default())
+            .wrap(rate_limiter)
             .service(upload)
             .service(download)
             .service(download_info)
