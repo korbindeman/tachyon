@@ -41,8 +41,8 @@ pub async fn upload(
     .bind(&upload.id)
     .bind(&upload.name)
     .bind(&upload.path)
-    .bind(&upload.download_count)
-    .bind(&upload.filesize)
+    .bind(upload.download_count)
+    .bind(upload.filesize)
     .execute(&data.db)
     .await
     {
