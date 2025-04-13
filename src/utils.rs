@@ -1,7 +1,8 @@
 use nanoid::nanoid;
 
-pub const MEGABYTE: usize = 1024 * 1024;
-pub const GIGABYTE: usize = 1024 * MEGABYTE;
+pub const KILOBYTE: usize = 1024;
+pub const MEGABYTE: usize = usize::pow(KILOBYTE, 2);
+pub const GIGABYTE: usize = usize::pow(MEGABYTE, 2);
 
 const ID_LENGTH: usize = 5;
 

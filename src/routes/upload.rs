@@ -20,21 +20,26 @@ pub async fn upload(
 
     let path_string = format!("uploads/{}.zip", id);
 
+    let filesize = form.file.size;
+
     if let Err(e) = form.file.file.persist(&path_string) {
         println!("Error persisting file: {:?}", e);
         return HttpResponse::InternalServerError().json("Upload failed");
     }
 
-    let upload = Upload::new(id.clone(), form.name.0, path_string);
+    let upload = Upload::new(id.clone(), form.name.0, path_string, filesize);
 
-    sqlx::query("INSERT INTO uploads (id, name, path, download_count) VALUES ($1, $2, $3, $4)")
-        .bind(&upload.id)
-        .bind(&upload.name)
-        .bind(&upload.path)
-        .bind(&upload.download_count)
-        .execute(&data.db)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO uploads (id, name, path, download_count, filesize) VALUES ($1, $2, $3, $4, $5)",
+    )
+    .bind(&upload.id)
+    .bind(&upload.name)
+    .bind(&upload.path)
+    .bind(&upload.download_count)
+    .bind(&upload.filesize)
+    .execute(&data.db)
+    .await
+    .unwrap();
 
     HttpResponse::Ok().json(format!(
         "File uploaded successfully: http://localhost:8080/download/{}",

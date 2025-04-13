@@ -4,7 +4,10 @@ mod utils;
 
 use actix_multipart::form::MultipartFormConfig;
 use actix_web::{App, HttpServer, middleware::Logger, web};
-use routes::{download::download, upload::upload};
+use routes::{
+    download::{download, download_info},
+    upload::upload,
+};
 use sqlx::{Executor, Sqlite, SqlitePool, migrate::MigrateDatabase};
 use tracing::info;
 use tracing_subscriber::fmt;
@@ -53,6 +56,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .service(upload)
             .service(download)
+            .service(download_info)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
