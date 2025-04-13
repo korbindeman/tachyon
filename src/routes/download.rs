@@ -17,5 +17,13 @@ pub async fn download(req: HttpRequest, data: web::Data<AppState>) -> actix_web:
 
     let filename = format!("{}.zip", res.name);
 
+    let download_count = res.download_count + 1;
+    sqlx::query("UPDATE uploads SET download_count = $1 WHERE id = $2")
+        .bind(download_count)
+        .bind(id)
+        .execute(&data.db)
+        .await
+        .unwrap();
+
     Ok(file.set_content_disposition(ContentDisposition::attachment(filename)))
 }

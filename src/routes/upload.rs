@@ -27,10 +27,11 @@ pub async fn upload(
 
     let upload = Upload::new(id.clone(), form.name.0, path_string);
 
-    sqlx::query("INSERT INTO uploads (id, name, path) VALUES ($1, $2, $3)")
+    sqlx::query("INSERT INTO uploads (id, name, path, download_count) VALUES ($1, $2, $3, $4)")
         .bind(&upload.id)
         .bind(&upload.name)
         .bind(&upload.path)
+        .bind(&upload.download_count)
         .execute(&data.db)
         .await
         .unwrap();
