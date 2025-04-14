@@ -31,4 +31,14 @@ korbin.co/files/abcde
 
 ---
 
+### 🚧 Planned
+- Customizable link expiration
+- Password protection for sensitive files
+- Support for multiple file uploads
+- Code quailty improvements:
+  - Unit tests
+  - More file storage options (e.g., cloud storage services)
+
+---
+
 ⚠️ **Disclaimer:** This is a personal project. It works great for my use case, but it’s not intended for public deployment without further security hardening. Use at your own risk.
