@@ -1,12 +1,13 @@
-use crate::{
-    AppState,
-    services::upload::Upload,
-    utils::{create_id, get_uploads_dir},
-};
 use actix_multipart::form::MultipartForm;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
-use actix_web::{HttpResponse, Responder, post, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, post, web};
+
+use crate::{
+    AppState,
+    services::upload::Upload,
+    utils::{check_api_key, create_id},
+};
 
 #[derive(Debug, MultipartForm)]
 struct UploadForm {
@@ -16,26 +17,30 @@ struct UploadForm {
 
 #[post("/upload")]
 pub async fn upload(
+    req: HttpRequest,
     MultipartForm(form): MultipartForm<UploadForm>,
     data: web::Data<AppState>,
 ) -> impl Responder {
+    if let Err(res) = check_api_key(&req) {
+        return res;
+    }
+
     let id = create_id();
 
-    let uploads_dir = get_uploads_dir();
-    let file_path = uploads_dir.join(format!("{id}.zip"));
-
-    let file_path_str = file_path.to_string_lossy().to_string();
+    let path_string = format!("uploads/{}.zip", id);
 
     let filesize = form.file.size;
 
-    if let Err(e) = form.file.file.persist(&file_path) {
+    dbg!(filesize);
+
+    if let Err(e) = form.file.file.persist(&path_string) {
         println!("Error persisting file: {:?}", e);
         return HttpResponse::InternalServerError().json("Upload failed");
     }
 
-    let upload = Upload::new(id.clone(), form.name.0, file_path_str, filesize);
+    let upload = Upload::new(id.clone(), form.name.0, path_string, filesize);
 
-    if let Err(e) = sqlx::query(
+    sqlx::query(
         "INSERT INTO uploads (id, name, path, download_count, filesize) VALUES ($1, $2, $3, $4, $5)",
     )
     .bind(&upload.id)
@@ -45,10 +50,7 @@ pub async fn upload(
     .bind(upload.filesize)
     .execute(&data.db)
     .await
-    {
-        println!("DB insert error: {:?}", e);
-        return HttpResponse::InternalServerError().json("DB error");
-    }
+    .unwrap();
 
     HttpResponse::Ok().json(format!(
         "File uploaded successfully: http://localhost:8080/download/{}",
