@@ -10,7 +10,7 @@ I’ve done my best to make it **convenient, reliable, and secure**.
 
 - Short, shareable download URLs
 - Download count tracking
-- Customizable link expiration (🚧 WIP)
+- Customizable link expiration time (🚧 WIP)
 - Password protected links (🚧 WIP)
 
 ---
@@ -32,9 +32,10 @@ korbin.co/files/abcde
 ---
 
 ### 🚧 Planned
-- Customizable link expiration
+- Customizable link expiration time
 - Password protection for sensitive files
-- Support for multiple file uploads
+- Support for multiple file uploads (auto zip)
+- Zip file contents info (for frontends)
 - Code quailty improvements:
   - Unit tests
   - More file storage options (e.g., cloud storage services)
