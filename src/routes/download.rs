@@ -1,6 +1,7 @@
 use crate::{AppState, services::upload::Upload, utils::get_uploads_dir};
 use actix_files::NamedFile;
 use actix_web::{HttpRequest, HttpResponse, Responder, get, http::header::ContentDisposition, web};
+use mime::Mime;
 use std::path::PathBuf;
 
 #[get("/download/{id:.*}")]
@@ -26,10 +27,21 @@ pub async fn download(req: HttpRequest, data: web::Data<AppState>) -> actix_web:
         return Err(actix_web::error::ErrorForbidden("Invalid file path"));
     }
 
-    let file = NamedFile::open(&canonical_path)
-        .map_err(|_| actix_web::error::ErrorNotFound("File not found"))?;
+    let path_buf = PathBuf::from(&res.path);
+    let extension = path_buf.extension().unwrap().to_str().unwrap();
 
-    let filename = format!("{}.zip", res.name);
+    let sanitized_name = res.name.replace(
+        |c: char| !c.is_ascii() || c == '"' || c == '\\' || c == '/',
+        "_",
+    ); // TODO: I don't know if this is necessary
+    let filename = format!("{}.{}", sanitized_name, extension);
+
+    let mime_type = res.mime_type.parse::<Mime>().unwrap();
+
+    let file = NamedFile::open(&canonical_path)
+        .map_err(|_| actix_web::error::ErrorNotFound("File not found"))?
+        .set_content_type(mime_type)
+        .set_content_disposition(ContentDisposition::attachment(filename));
 
     sqlx::query("UPDATE uploads SET download_count = download_count + 1 WHERE id = $1")
         .bind(id)
@@ -40,7 +52,7 @@ pub async fn download(req: HttpRequest, data: web::Data<AppState>) -> actix_web:
             actix_web::error::ErrorInternalServerError("Failed to update count")
         })?;
 
-    Ok(file.set_content_disposition(ContentDisposition::attachment(filename)))
+    Ok(file)
 }
 
 #[get("/info/{id:.*}")]

@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS uploads (
     name VARCHAR(255) NOT NULL,
     path TEXT NOT NULL,
     download_count INTEGER DEFAULT 0,
-    filesize INTEGER NOT NULL
+    filesize INTEGER NOT NULL,
+    mime_type VARCHAR(255)
 );

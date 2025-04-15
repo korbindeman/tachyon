@@ -20,16 +20,18 @@ pub struct Upload {
     pub path: String,
     pub download_count: u32,
     pub filesize: u32,
+    pub mime_type: String,
 }
 
 impl Upload {
-    pub fn new(id: String, name: String, path: String, filesize: usize) -> Self {
+    pub fn new(id: String, name: String, path: String, filesize: usize, mime_type: String) -> Self {
         Self {
             id,
             name,
             path,
             download_count: 0,
             filesize: filesize as u32,
+            mime_type,
         }
     }
 

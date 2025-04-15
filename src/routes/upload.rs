@@ -1,6 +1,6 @@
 use crate::{
     AppState,
-    services::upload::Upload,
+    services::{filetype::detect_file_type, upload::Upload},
     utils::{check_api_key, create_id},
 };
 use actix_multipart::form::MultipartForm;
@@ -24,29 +24,36 @@ pub async fn upload(
         return res;
     }
 
+    let f = detect_file_type(&form.file);
+
     let id = create_id();
 
-    let path_string = format!("uploads/{}.zip", id);
+    let path_string = format!("uploads/{}.{}", id, &f.extension);
 
     let filesize = form.file.size;
-
-    dbg!(filesize);
 
     if let Err(e) = form.file.file.persist(&path_string) {
         println!("Error persisting file: {:?}", e);
         return HttpResponse::InternalServerError().json("Upload failed");
     }
 
-    let upload = Upload::new(id.clone(), form.name.0, path_string, filesize);
+    let upload = Upload::new(
+        id.clone(),
+        form.name.0,
+        path_string,
+        filesize,
+        f.mime_type.to_string(),
+    );
 
     sqlx::query(
-        "INSERT INTO uploads (id, name, path, download_count, filesize) VALUES ($1, $2, $3, $4, $5)",
+        "INSERT INTO uploads (id, name, path, download_count, filesize, mime_type) VALUES ($1, $2, $3, $4, $5, $6)",
     )
     .bind(&upload.id)
     .bind(&upload.name)
     .bind(&upload.path)
     .bind(upload.download_count)
     .bind(upload.filesize)
+    .bind(&upload.mime_type)
     .execute(&data.db)
     .await
     .unwrap();
