@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
+use crate::utils::{extension_to_filetype, get_base_url};
 use serde::Serialize;
 use sqlx::prelude::FromRow;
-
-use crate::utils::{extension_to_filetype, get_base_url};
+use std::path::PathBuf;
 
 #[derive(Serialize)]
 pub struct UploadInfo {
