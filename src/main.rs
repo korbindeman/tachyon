@@ -22,7 +22,6 @@ use utils::{GIGABYTE, get_database_url, get_port};
 const PAYLOAD_LIMIT: usize = GIGABYTE * 5;
 
 async fn init_database() -> Result<SqlitePool, sqlx::Error> {
-    // initialize the database connection
     let database_url = &get_database_url();
     if !Sqlite::database_exists(database_url).await.unwrap_or(false) {
         println!("Creating database {}", database_url);
@@ -51,7 +50,7 @@ async fn main() -> std::io::Result<()> {
 
     let pool = init_database().await.unwrap();
 
-    // initialize the database
+    // initialize the database table
     pool.execute(include_str!("./schema.sql"))
         .await
         .expect("Failed to initialize DB");
