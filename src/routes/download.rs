@@ -56,5 +56,5 @@ pub async fn download_info(
         .await
         .map_err(|_| actix_web::error::ErrorNotFound("Upload not found"))?;
 
-    Ok(HttpResponse::Ok().json(res))
+    Ok(HttpResponse::Ok().json(res.info()))
 }

@@ -17,7 +17,7 @@ use sqlx::{Executor, Sqlite, SqlitePool, migrate::MigrateDatabase};
 use std::time::Duration;
 use tracing::info;
 use tracing_subscriber::fmt;
-use utils::{GIGABYTE, get_database_url};
+use utils::{GIGABYTE, get_database_url, get_port};
 
 const PAYLOAD_LIMIT: usize = GIGABYTE * 5;
 
@@ -75,7 +75,7 @@ async fn main() -> std::io::Result<()> {
             .service(download)
             .service(download_info)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", get_port()))?
     .run()
     .await
 }

@@ -52,8 +52,7 @@ pub async fn upload(
     .await
     .unwrap();
 
-    HttpResponse::Ok().json(format!(
-        "File uploaded successfully: http://localhost:8080/download/{}",
-        id
-    ))
+    HttpResponse::Created()
+        .append_header(("Location", format!("/download/{}", id)))
+        .json(upload.info())
 }
