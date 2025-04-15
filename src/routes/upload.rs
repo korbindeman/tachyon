@@ -1,14 +1,13 @@
 use crate::{
     AppState,
     services::{filetype::detect_file_type, upload::Upload},
-    utils::{check_api_key, create_id},
+    utils::{check_api_key, create_id, get_uploads_dir},
 };
-use actix_multipart::form::MultipartForm;
-use actix_multipart::form::tempfile::TempFile;
-use actix_multipart::form::text::Text;
+use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
 use actix_web::{HttpRequest, HttpResponse, Responder, post, web};
+use std::path::PathBuf;
 
-#[derive(Debug, MultipartForm)]
+#[derive(MultipartForm)]
 struct UploadForm {
     name: Text<String>,
     file: TempFile,
@@ -24,15 +23,13 @@ pub async fn upload(
         return res;
     }
 
-    let f = detect_file_type(&form.file);
-
     let id = create_id();
 
-    let path_string = format!("uploads/{}.{}", id, &f.extension);
+    let filetype = detect_file_type(&form.file);
 
-    let filesize = form.file.size;
+    let file_path: PathBuf = get_uploads_dir().join(format!("{}.{}", id, &filetype.extension));
 
-    if let Err(e) = form.file.file.persist(&path_string) {
+    if let Err(e) = form.file.file.persist(&file_path) {
         println!("Error persisting file: {:?}", e);
         return HttpResponse::InternalServerError().json("Upload failed");
     }
@@ -40,25 +37,17 @@ pub async fn upload(
     let upload = Upload::new(
         id.clone(),
         form.name.0,
-        path_string,
-        filesize,
-        f.mime_type.to_string(),
+        file_path,
+        form.file.size,
+        filetype.mime_type,
     );
 
-    sqlx::query(
-        "INSERT INTO uploads (id, name, path, download_count, filesize, mime_type) VALUES ($1, $2, $3, $4, $5, $6)",
-    )
-    .bind(&upload.id)
-    .bind(&upload.name)
-    .bind(&upload.path)
-    .bind(upload.download_count)
-    .bind(upload.filesize)
-    .bind(&upload.mime_type)
-    .execute(&data.db)
-    .await
-    .unwrap();
+    if let Err(e) = upload.insert(&data.db).await {
+        println!("DB insert error: {:?}", e);
+        return HttpResponse::InternalServerError().json("DB error");
+    }
 
     HttpResponse::Created()
         .append_header(("Location", format!("/download/{}", id)))
-        .json(upload.info())
+        .json(upload.as_info())
 }
