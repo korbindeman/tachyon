@@ -1,7 +1,8 @@
 use crate::{
     AppState,
-    services::{filetype::detect_file_type, upload::Upload},
-    utils::{check_api_key, create_id, get_uploads_dir},
+    models::transfer::Transfer,
+    services::filetype::detect_file_type,
+    utils::{check_api_key, env::get_transfers_dir, id::create_id},
 };
 use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
 use actix_web::{HttpRequest, HttpResponse, Responder, post, web};
@@ -27,14 +28,14 @@ pub async fn upload(
 
     let filetype = detect_file_type(&form.file);
 
-    let file_path: PathBuf = get_uploads_dir().join(format!("{}.{}", id, &filetype.extension));
+    let file_path: PathBuf = get_transfers_dir().join(format!("{}.{}", id, &filetype.extension));
 
     if let Err(e) = form.file.file.persist(&file_path) {
         println!("Error persisting file: {:?}", e);
         return HttpResponse::InternalServerError().json("Upload failed");
     }
 
-    let upload = Upload::new(
+    let transfer = Transfer::new(
         id.clone(),
         form.name.0,
         file_path,
@@ -42,12 +43,12 @@ pub async fn upload(
         filetype.mime_type,
     );
 
-    if let Err(e) = upload.insert(&data.db).await {
+    if let Err(e) = transfer.insert(&data.db).await {
         println!("DB insert error: {:?}", e);
         return HttpResponse::InternalServerError().json("DB error");
     }
 
     HttpResponse::Created()
         .append_header(("Location", format!("/download/{}", id)))
-        .json(upload.as_info())
+        .json(transfer.as_info())
 }

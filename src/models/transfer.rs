@@ -1,11 +1,11 @@
-use crate::utils::{extension_to_filetype, get_base_url};
+use crate::utils::{env::get_base_url, format::extension_to_filetype};
 use mime::Mime;
 use serde::Serialize;
 use sqlx::{SqlitePool, prelude::FromRow};
 use std::path::PathBuf;
 
 #[derive(Debug)]
-pub struct Upload {
+pub struct Transfer {
     pub id: String,
     pub name: String,
     pub path: PathBuf,
@@ -15,17 +15,17 @@ pub struct Upload {
 }
 
 #[derive(Serialize)]
-pub struct UploadInfo {
+pub struct TransferInfo {
     pub id: String,
     pub download_url: String,
     pub name: String,
     pub filename: String,
-    pub filetype: String,
+    pub filetype_pretty: String,
     pub filesize: u32,
 }
 
 #[derive(FromRow)]
-struct UploadRow {
+struct TransferRow {
     pub id: String,
     pub name: String,
     pub path: String,
@@ -34,9 +34,9 @@ struct UploadRow {
     pub filesize: u32,
 }
 
-impl UploadRow {
-    fn into_upload(self) -> Upload {
-        Upload {
+impl TransferRow {
+    fn into_transfer(self) -> Transfer {
+        Transfer {
             id: self.id,
             name: self.name,
             path: PathBuf::from(self.path),
@@ -47,7 +47,7 @@ impl UploadRow {
     }
 }
 
-impl Upload {
+impl Transfer {
     pub fn new(id: String, name: String, path: PathBuf, filesize: usize, mime_type: Mime) -> Self {
         Self {
             id,
@@ -59,7 +59,7 @@ impl Upload {
         }
     }
 
-    pub fn as_info(&self) -> UploadInfo {
+    pub fn as_info(&self) -> TransferInfo {
         let filename = format!(
             "{}.{}",
             &self.name,
@@ -70,29 +70,30 @@ impl Upload {
                 .unwrap()
         );
 
-        let filetype = extension_to_filetype(PathBuf::from(&self.path).extension().unwrap());
+        let filetype_pretty = extension_to_filetype(PathBuf::from(&self.path).extension().unwrap());
 
-        UploadInfo {
+        TransferInfo {
             id: self.id.clone(),
             name: self.name.clone(),
             download_url: format!("{}/download/{}", get_base_url(), self.id),
             filename,
-            filetype,
+            filetype_pretty,
             filesize: self.filesize,
         }
     }
 
     pub async fn find_by_id(db: &SqlitePool, id: &str) -> Result<Self, sqlx::Error> {
-        let upload_row = sqlx::query_as::<_, UploadRow>("SELECT * FROM uploads WHERE id = $1")
-            .bind(id)
-            .fetch_one(db)
-            .await?;
+        let transfer_row =
+            sqlx::query_as::<_, TransferRow>("SELECT * FROM transfers WHERE id = $1")
+                .bind(id)
+                .fetch_one(db)
+                .await?;
 
-        Ok(upload_row.into_upload())
+        Ok(transfer_row.into_transfer())
     }
 
     pub async fn insert(&self, db: &SqlitePool) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO uploads (id, name, path, mime_type, download_count, filesize) VALUES ($1, $2, $3, $4, $5, $6)")
+        sqlx::query("INSERT INTO transfers (id, name, path, mime_type, download_count, filesize) VALUES ($1, $2, $3, $4, $5, $6)")
             .bind(&self.id)
             .bind(&self.name)
             .bind(&self.path.to_string_lossy())
@@ -105,7 +106,7 @@ impl Upload {
     }
 
     pub async fn update_download_count(&self, db: &SqlitePool) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE uploads SET download_count = download_count + 1 WHERE id = $1")
+        sqlx::query("UPDATE transfers SET download_count = download_count + 1 WHERE id = $1")
             .bind(&self.id)
             .execute(db)
             .await?;

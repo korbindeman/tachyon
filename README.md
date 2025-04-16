@@ -1,6 +1,6 @@
 # Tachyon
 
-**Tachyon** is my personal self-hosted file sharing server, built in Rust using [Actix Web](https://actix.rs/). It allows me to upload and share large files through short, clean download links.
+**Tachyon** is my personal self-hosted file transfer server, built in Rust using [Actix Web](https://actix.rs/). It allows me to upload and share large files through short, clean download links.
 
 I’ve done my best to make it **convenient, reliable, and secure**.
 
@@ -18,27 +18,33 @@ I’ve done my best to make it **convenient, reliable, and secure**.
 ### 🔐 Security Considerations
 
 - Uploads require a valid API key
-- File paths are validated and sandboxed (no traversal vulnerabilities)
-- Global rate limiting to prevent abuse
+- File paths are validated and canonicalized (no traversal vulnerabilities)
+- Rate limiting (🚧 WIP)
 - Download links are public by design — password protection is planned for sensitive files
 
 ---
 
 ### 🛠️ How I Use It
 
-I run the server on a Raspberry Pi 5 at home. It's integrated into my personal website at [korbin.co](https://korbin.co), where I serve files at routes like:
+I run the server on a Raspberry Pi 5 at home. It's integrated into my personal website at [korbin.co](https://korbin.co), where I serve files with a frontend at routes like:
 korbin.co/files/abcde
 
 ---
 
-### 🚧 Planned
+### ⚙️ Setup
+
+🚧 WORK IN PROGRESS
+
+---
+
+### 🚧 Planned Features
 - Customizable link expiration time
 - Password protection for sensitive files
 - Support for multiple file uploads (auto zip)
 - Zip file contents info (for frontends)
+- More file storage options (e.g., cloud storage services)
 - Code quailty improvements:
-  - Unit tests
-  - More file storage options (e.g., cloud storage services)
+  - Tests
 
 ---
 
