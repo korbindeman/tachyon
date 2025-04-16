@@ -1,10 +1,11 @@
+mod config;
 mod models;
 mod routes;
 mod services;
 mod state;
 mod utils;
 
-use crate::state::AppState;
+use crate::{config::Config, state::AppState};
 use actix_extensible_rate_limit::{
     RateLimiter,
     backend::{SimpleInputFunctionBuilder, memory::InMemoryBackend},
@@ -17,10 +18,8 @@ use sqlx::{Executor, Sqlite, SqlitePool, migrate::MigrateDatabase};
 use std::time::Duration;
 use tracing::info;
 use tracing_subscriber::fmt;
-use utils::env::{get_database_url, get_host, get_payload_limit, get_port, get_rate_limit_rps};
 
-async fn init_database() -> Result<SqlitePool, sqlx::Error> {
-    let database_url = &get_database_url();
+async fn init_database(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
     if !Sqlite::database_exists(database_url).await.unwrap_or(false) {
         println!("Creating database {}", database_url);
         Sqlite::create_database(database_url)
@@ -38,33 +37,41 @@ async fn init_database() -> Result<SqlitePool, sqlx::Error> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-
     fmt::init();
 
-    let host = get_host();
-    let port = get_port();
+    let config = Config::from_env();
 
-    info!("Starting HTTP server on {}:{}", host, port);
+    let pool = init_database(&config.database_url)
+        .await
+        .expect("Database init failed");
 
-    let pool = init_database().await.expect("Database init failed");
+    info!("Starting HTTP server on {}:{}", config.host, config.port);
+
+    let state = AppState {
+        db: pool.clone(),
+        config: config.clone(),
+    };
 
     HttpServer::new(move || {
-        let backend = InMemoryBackend::builder().build();
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), get_rate_limit_rps())
-            .real_ip_key()
-            .build();
-        let rate_limiter = RateLimiter::builder(backend, input).add_headers().build();
+        let rate_limiter = RateLimiter::builder(
+            InMemoryBackend::builder().build(),
+            SimpleInputFunctionBuilder::new(Duration::from_secs(1), config.rate_limit_rps)
+                .real_ip_key()
+                .build(),
+        )
+        .add_headers()
+        .build();
 
         App::new()
-            .app_data(MultipartFormConfig::default().total_limit(get_payload_limit()))
-            .app_data(web::Data::new(AppState { db: pool.clone() }))
+            .app_data(MultipartFormConfig::default().total_limit(config.payload_limit))
+            .app_data(web::Data::new(state.clone()))
             .wrap(Logger::default())
             .wrap(rate_limiter)
             .service(upload)
             .service(download)
             .service(download_info)
     })
-    .bind((host, port))?
+    .bind((config.host.as_str(), config.port))?
     .run()
     .await
 }

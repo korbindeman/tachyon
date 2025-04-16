@@ -41,10 +41,10 @@ There are some environment variables that need to be set up, however most of the
 | `BASE_URL`         | `http://{HOST}:{PORT}`        | The full base URL where the app is hosted (e.g. `http://localhost:8080`) used for generating download links. |
 | `DATABASE_URL`     | `sqlite://sqlite.db` | URL to your SQLite database. |
 | `TRANSFERS_DIR`    | `transfers/`         | Directory where uploaded files are stored. Will NOT be created if it doesn't exist. |
-| `API_KEY`          | _(required)_         | Secret key required to upload files. Must be sent in `x-api-key` header. This will likely be removed in the future. |
 | `ID_LENGTH`        | `5`                  | Length of generated file codes (e.g. `abcde`). |
 | `PAYLOAD_LIMIT_MB` | `5120`               | Max upload size in megabytes (default: 5GB). |
 | `RATE_LIMIT_RPS`   | `5`                  | Max requests per second per IP. |
+| `API_KEY`          | _(required)_         | Secret key required to upload files. Must be sent in `x-api-key` header. ⚠️ This will likely be removed in the future. |
 
 Then you can run the server using the following command:
 

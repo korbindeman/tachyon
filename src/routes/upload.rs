@@ -1,11 +1,10 @@
 use crate::{
-    AppState,
-    models::transfer::Transfer,
-    services::filetype::detect_file_type,
-    utils::{check_api_key, env::get_transfers_dir, id::create_id},
+    AppState, models::transfer::Transfer, services::filetype::detect_file_type,
+    utils::check_api_key,
 };
 use actix_multipart::form::{MultipartForm, tempfile::TempFile, text::Text};
 use actix_web::{HttpRequest, HttpResponse, Responder, post, web};
+use nanoid::nanoid;
 use std::path::PathBuf;
 
 #[derive(MultipartForm)]
@@ -24,11 +23,15 @@ pub async fn upload(
         return res;
     }
 
-    let id = create_id();
+    let id_length = data.config.id_length;
+    let id = nanoid!(id_length);
 
     let filetype = detect_file_type(&form.file);
 
-    let file_path: PathBuf = get_transfers_dir().join(format!("{}.{}", id, &filetype.extension));
+    let file_path: PathBuf = data
+        .config
+        .transfers_dir
+        .join(format!("{}.{}", id, &filetype.extension));
 
     if let Err(e) = form.file.file.persist(&file_path) {
         println!("Error persisting file: {:?}", e);
@@ -50,5 +53,5 @@ pub async fn upload(
 
     HttpResponse::Created()
         .append_header(("Location", format!("/download/{}", id)))
-        .json(transfer.as_info())
+        .json(transfer.as_info(&data.config.base_url))
 }

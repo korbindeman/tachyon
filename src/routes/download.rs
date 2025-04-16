@@ -1,4 +1,4 @@
-use crate::{AppState, models::transfer::Transfer, utils::env::get_transfers_dir};
+use crate::{AppState, models::transfer::Transfer};
 use actix_files::NamedFile;
 use actix_web::{HttpResponse, Responder, get, http::header::ContentDisposition, web};
 
@@ -16,7 +16,9 @@ pub async fn download(
         .canonicalize()
         .map_err(|_| actix_web::error::ErrorNotFound("Invalid path"))?;
 
-    let transfers_dir = get_transfers_dir()
+    let transfers_dir = data
+        .config
+        .transfers_dir
         .canonicalize()
         .map_err(|_| actix_web::error::ErrorInternalServerError("Transfers dir missing"))?;
 
@@ -24,7 +26,7 @@ pub async fn download(
         return Err(actix_web::error::ErrorForbidden("Invalid file path"));
     }
 
-    let filename = transfer.as_info().filename;
+    let filename = transfer.as_info(&data.config.base_url).filename;
 
     let file = NamedFile::open(&canonical_path)
         .map_err(|_| actix_web::error::ErrorNotFound("File not found"))?
@@ -45,5 +47,5 @@ pub async fn download_info(
         .await
         .map_err(|_| actix_web::error::ErrorNotFound("File not found"))?;
 
-    Ok(HttpResponse::Ok().json(transfer.as_info()))
+    Ok(HttpResponse::Ok().json(transfer.as_info(&data.config.base_url)))
 }

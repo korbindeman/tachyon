@@ -1,4 +1,4 @@
-use crate::utils::{env::get_base_url, format::extension_to_filetype};
+use crate::utils::format::extension_to_filetype;
 use mime::Mime;
 use serde::Serialize;
 use sqlx::{SqlitePool, prelude::FromRow};
@@ -59,7 +59,7 @@ impl Transfer {
         }
     }
 
-    pub fn as_info(&self) -> TransferInfo {
+    pub fn as_info(&self, base_url: &str) -> TransferInfo {
         let filename = format!(
             "{}.{}",
             &self.name,
@@ -75,7 +75,7 @@ impl Transfer {
         TransferInfo {
             id: self.id.clone(),
             name: self.name.clone(),
-            download_url: format!("{}/download/{}", get_base_url(), self.id),
+            download_url: format!("{}/download/{}", base_url, self.id),
             filename,
             filetype_pretty,
             filesize: self.filesize,

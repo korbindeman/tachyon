@@ -14,7 +14,6 @@ pub fn detect_file_type(file: &TempFile) -> FileTypeInfo {
     let path_buf = PathBuf::from(file_name);
     let path = file.file.path();
 
-    // check it against given MIME type
     let browser_mime = file.content_type.clone().unwrap();
     let original_file_extension = path_buf
         .extension()
@@ -43,6 +42,8 @@ pub fn detect_file_type(file: &TempFile) -> FileTypeInfo {
             extension: original_file_extension,
         };
     }
+
+    // TODO: check the inferred MIME type against the MIME type given by the request
 
     // TODO: final fallback: mark it as suspicious and return info from request
     // if it's still unknown log it as suspicious and add the original extension
