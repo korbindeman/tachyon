@@ -24,27 +24,55 @@ I’ve done my best to make it **convenient, reliable, and secure**.
 
 ---
 
-### 🛠️ How I Use It
+### 🛰️ Usage
 
-I run the server on a Raspberry Pi 5 at home. It's integrated into my personal website at [korbin.co](https://korbin.co), where I serve files with a frontend at routes like:
-korbin.co/files/abcde
+🚧 WIP
 
 ---
 
 ### ⚙️ Setup
 
-🚧 WORK IN PROGRESS
+There are some environment variables that need to be set up, however most of them have default values. You can put these in a `.env` file in the root directory.
+
+| Variable           | Default             | Description |
+|--------------------|---------------------|-------------|
+| `HOST`             | `127.0.0.1`          | Host address. |
+| `PORT`             | `8080`               | Port to bind the server on. |
+| `BASE_URL`         | `http://{HOST}:{PORT}`        | The full base URL where the app is hosted (e.g. `http://localhost:8080`) used for generating download links. |
+| `DATABASE_URL`     | `sqlite://sqlite.db` | URL to your SQLite database. |
+| `TRANSFERS_DIR`    | `transfers/`         | Directory where uploaded files are stored. Will NOT be created if it doesn't exist. |
+| `API_KEY`          | _(required)_         | Secret key required to upload files. Must be sent in `x-api-key` header. This will likely be removed in the future. |
+| `ID_LENGTH`        | `5`                  | Length of generated file codes (e.g. `abcde`). |
+| `PAYLOAD_LIMIT_MB` | `5120`               | Max upload size in megabytes (default: 5GB). |
+| `RATE_LIMIT_RPS`   | `5`                  | Max requests per second per IP. |
+
+Then you can run the server using the following command:
+
+```
+cargo run
+```
+
+For production, you should run the server using the following command:
+
+```
+cargo run --release
+```
+
+Or, build the binary and run it directly:
+
+```
+cargo build --release
+./target/release/tachyon
+```
 
 ---
 
-### 🚧 Planned Features
-- Customizable link expiration time
-- Password protection for sensitive files
-- Support for multiple file uploads (auto zip)
-- Zip file contents info (for frontends)
-- More file storage options (e.g., cloud storage services)
-- Code quailty improvements:
-  - Tests
+### 🛠️ How I Host It
+
+I run the server on a Raspberry Pi 5 4GB + an NVME SSD at home. I live in an apartment with shared internet access (which I can't control), so to expose the server to the internet, I am using Cloudflare Tunnel.
+
+It's integrated into my personal website at [korbin.co](https://korbin.co), where I serve files with a frontend at routes like:
+korbin.co/files/abcde
 
 ---
 

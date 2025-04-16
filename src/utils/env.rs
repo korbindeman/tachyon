@@ -12,7 +12,7 @@ pub fn get_port() -> u16 {
 }
 
 pub fn get_base_url() -> String {
-    std::env::var("BASE_URL").unwrap()
+    std::env::var("BASE_URL").unwrap_or_else(|_| format!("http://{}:{}", get_host(), get_port()))
 }
 
 pub fn get_rate_limit_rps() -> u64 {
