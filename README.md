@@ -48,19 +48,19 @@ There are some environment variables that need to be set up, however most of the
 
 Then you can run the server using the following command:
 
-```
+bash```
 cargo run
 ```
 
 For production, you should run the server using the following command:
 
-```
+bash```
 cargo run --release
 ```
 
 Or, build the binary and run it directly:
 
-```
+bash```
 cargo build --release
 ./target/release/tachyon
 ```
