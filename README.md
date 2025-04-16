@@ -69,7 +69,7 @@ cargo build --release
 
 ### 🛠️ How I Host It
 
-I run the server on a Raspberry Pi 5 4GB + an NVME SSD at home. I live in an apartment with shared internet (which I can't control), so to expose the server to the internet, I am using Cloudflare Tunnel.
+I run the server on a Raspberry Pi 5 4GB + an NVME SSD at home. I live in an apartment with shared internet, so to expose the server to the internet, I am using Cloudflare Tunnel.
 
 It's integrated into my personal website at [korbin.co](https://korbin.co), where I serve files with a frontend at routes like:
 korbin.co/files/abcde
