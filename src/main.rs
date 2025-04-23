@@ -17,7 +17,7 @@ use routes::*;
 use sqlx::{Executor, Sqlite, SqlitePool, migrate::MigrateDatabase};
 use std::time::Duration;
 use tracing::info;
-use tracing_subscriber::fmt;
+use tracing_subscriber::{EnvFilter, fmt};
 
 async fn init_database(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
     if !Sqlite::database_exists(database_url).await.unwrap_or(false) {
@@ -34,10 +34,20 @@ async fn init_database(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
     Ok(pool)
 }
 
+fn init_tracing() {
+    fmt()
+        .json()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_current_span(true)
+        .with_span_list(false)
+        .init();
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    fmt::init();
+
+    let _guard = init_tracing();
 
     let config = Config::from_env();
 
